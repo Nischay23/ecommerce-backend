@@ -6,6 +6,10 @@ import { createProduct } from "./controller/Product.js";
 import productsRouter from "./routes/Products.js";
 import categoriesRouter from "./routes/Categories.js";
 import brandsRouter from "./routes/Brands.js";
+import usersRouter from "./routes/User.js";
+import authRouter from "./routes/Auth.js";
+import cartRouter from "./routes/Cart.js";
+import ordersRouter from "./routes/Order.js";
 import cors from "cors";
 
 //middlewares
@@ -18,6 +22,10 @@ server.use(express.json());
 server.use("/products", productsRouter);
 server.use("/categories", categoriesRouter);
 server.use("/brands", brandsRouter);
+server.use("/users", usersRouter);
+server.use("/auth", authRouter);
+server.use("/cart", cartRouter);
+server.use("/orders", ordersRouter);
 
 main().catch((err) => console.log(err));
 
