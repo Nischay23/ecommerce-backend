@@ -12,8 +12,13 @@ export async function createProduct(req, res) {
 
 export async function fetchAllProducts(req, res) {
   // Base query with filtering to exclude deleted products
-  let query = Product.find({ deleted: { $ne: true } });
-  let totalProductsQuery = Product.find({ deleted: { $ne: true } });
+  let condition = {};
+  if (!req.query.admin) {
+    condition.deleted = { $ne: true };
+  }
+
+  let query = Product.find(condition);
+  let totalProductsQuery = Product.find(condition);
 
   // Apply category filter if provided
   if (req.query.category) {
