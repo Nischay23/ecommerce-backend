@@ -1,15 +1,9 @@
 import { Order } from "../model/Order.js";
 
 export async function fetchOrdersByUser(req, res) {
-<<<<<<< HEAD
   const { userId } = req.params;
   try {
     const orders = await Order.find({ user: userId });
-=======
-  const { id } = req.user;
-  try {
-    const orders = await Order.find({ user: id });
->>>>>>> 96eadad4c652cb76d19d5bd14c99817706a5a8db
 
     res.status(200).json(orders);
   } catch (err) {
@@ -60,10 +54,7 @@ export async function fetchAllOrders(req, res) {
   }
 
   const totalDocs = await totalOrdersQuery.count().exec();
-<<<<<<< HEAD
   console.log({ totalDocs });
-=======
->>>>>>> 96eadad4c652cb76d19d5bd14c99817706a5a8db
 
   if (req.query._page && req.query._limit) {
     const pageSize = req.query._limit;

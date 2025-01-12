@@ -14,41 +14,39 @@ import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { Strategy as JwtStrategy } from "passport-jwt";
 import { ExtractJwt as ExtractJwt } from "passport-jwt";
 
 import { User } from "./model/User.js";
-import { isAuth } from "./services/common.js";
-import { sanitizeUser, cookieExtractor } from "./services/common.js";
-
-import cookieParser from "cookie-parser";
+import { isAuth, sanitizeUser } from "./services/common.js";
 
 const SECRET_KEY = "SECRET_KEY";
+// JWT options
 const opts = {};
-opts.jwtFromRequest = cookieExtractor;
+opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
 
 //middlewares
-server.use(express.static("build"));
-server.use(cookieParser());
+server.use(express.json()); // Middleware to parse JSON requests
 
 server.use(
   session({
     secret: "keyboard cat",
-    resave: false, // don't save session if unmodified
-    saveUninitialized: false, // don't create session until something stored
+    resave: false,
+    saveUninitialized: false,
   })
 );
-server.use(passport.authenticate("session"));
+server.use(passport.initialize());
+server.use(passport.session()); // Handles persistent login sessions
+
 server.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
   })
 );
-server.use(express.json());
+
 server.use("/products", isAuth(), productsRouter);
 // we can also use JWT token for client-only auth
 server.use("/categories", isAuth(), categoriesRouter);
@@ -83,7 +81,7 @@ passport.use(
             return done(null, false, { message: "invalid credentials" });
           }
           const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
-          done(null, { token }); // this lines sends to serializer
+          done(null, token); // this lines sends to serializer
         }
       );
     } catch (err) {
@@ -96,7 +94,8 @@ passport.use(
   new JwtStrategy(opts, async function (jwt_payload, done) {
     console.log({ jwt_payload });
     try {
-      const user = await User.findById(jwt_payload.id);
+      const user = await User.findOne({ id: jwt_payload.sub });
+
       if (user) {
         return done(null, sanitizeUser(user)); // this calls serializer
       } else {
@@ -115,8 +114,6 @@ passport.serializeUser(function (user, cb) {
     return cb(null, { id: user.id, role: user.role });
   });
 });
-
-// this changes session variable req.user when called from authorized request
 
 passport.deserializeUser(function (user, cb) {
   console.log("de-serialize", user);

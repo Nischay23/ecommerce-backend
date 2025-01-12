@@ -1,22 +1,11 @@
 import { User } from "../model/User.js";
 
 export async function fetchUserById(req, res) {
-<<<<<<< HEAD
   const { id } = req.params;
-=======
-  const { id } = req.user;
->>>>>>> 96eadad4c652cb76d19d5bd14c99817706a5a8db
 
   try {
     const user = await User.findById(id);
-    res
-      .status(200)
-      .json({
-        id: user.id,
-        addresses: user.addresses,
-        email: user.email,
-        role: user.role,
-      });
+    res.status(200).json(user);
   } catch (err) {
     res.status(400).json(err);
   }
