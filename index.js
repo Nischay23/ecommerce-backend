@@ -20,15 +20,19 @@ import { Strategy as JwtStrategy } from "passport-jwt";
 import { ExtractJwt as ExtractJwt } from "passport-jwt";
 
 import { User } from "./model/User.js";
-import { isAuth, sanitizeUser } from "./services/common.js";
+import { isAuth, sanitizeUser, cookieExtractor } from "./services/common.js";
+import cookieParser from "cookie-parser";
 
 const SECRET_KEY = "SECRET_KEY";
 // JWT options
 const opts = {};
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
 
 //middlewares
+
+server.use(express.static("build"));
+server.use(cookieParser());
 server.use(express.json()); // Middleware to parse JSON requests
 
 server.use(
@@ -63,12 +67,10 @@ passport.use(
     password,
     done
   ) {
-    // by default passport uses username
     try {
       const user = await User.findOne({ email: email });
-      console.log(email, password, user);
       if (!user) {
-        return done(null, false, { message: "invalid credentials" }); // for safety
+        return done(null, false, { message: "invalid credentials" });
       }
       crypto.pbkdf2(
         password,
@@ -78,10 +80,13 @@ passport.use(
         "sha256",
         async function (err, hashedPassword) {
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
-            return done(null, false, { message: "invalid credentials" });
+            return done(null, false, { message: "Invalid credentials" });
           }
-          const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
-          done(null, token); // this lines sends to serializer
+
+          // Generate token
+          const token = jwt.sign({ user }, SECRET_KEY);
+          console.log("Generated Token:", token); // Debug token generation
+          done(null, { id: user.id, role: user.role });
         }
       );
     } catch (err) {
@@ -89,19 +94,28 @@ passport.use(
     }
   })
 );
+
 passport.use(
   "jwt",
   new JwtStrategy(opts, async function (jwt_payload, done) {
-    console.log({ jwt_payload });
-    try {
-      const user = await User.findOne({ id: jwt_payload.sub });
+    console.log("Decoded JWT Payload in JwtStrategy:", jwt_payload);
 
+    if (!jwt_payload.id) {
+      console.error("JWT Payload missing id");
+      return done(null, false, { message: "Invalid JWT payload" });
+    }
+
+    try {
+      const user = await User.findById(jwt_payload.id);
       if (user) {
-        return done(null, sanitizeUser(user)); // this calls serializer
+        console.log("User found:", user);
+        return done(null, user);
       } else {
+        console.error("User not found in database");
         return done(null, false);
       }
     } catch (err) {
+      console.error("Error in JwtStrategy:", err);
       return done(err, false);
     }
   })

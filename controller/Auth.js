@@ -1,4 +1,3 @@
-import { sanitizeFilter } from "mongoose";
 import { User } from "../model/User.js";
 import crypto from "crypto";
 import { sanitizeUser } from "../services/common.js";
@@ -30,27 +29,32 @@ export async function createUser(req, res) {
                 httpOnly: true,
               })
               .status(201)
-              .json(token);
+              .json({ id: doc.id, role: doc.role });
           }
         });
       }
     );
   } catch (err) {
-    console.error("Error in createUser:", err); // Debug log
     res.status(400).json(err);
   }
 }
 
 export async function loginUser(req, res) {
+  const token = jwt.sign(sanitizeUser(req.user), SECRET_KEY);
+
   res
-    .cookie("jwt", req.user.token, {
+    .cookie("jwt", token, {
       expires: new Date(Date.now() + 3600000),
       httpOnly: true,
     })
     .status(201)
-    .json(req.user.token);
+    .json({ token: token });
 }
 
-export async function checkUser(req, res) {
-  res.json({ status: "success", user: req.user });
+export async function checkAuth(req, res) {
+  if (req.user) {
+    res.json(req.user);
+  } else {
+    res.sendStatus(401);
+  }
 }

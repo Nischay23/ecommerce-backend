@@ -43,7 +43,6 @@ export async function fetchAllProducts(req, res) {
 
   // Count the total documents for pagination
   const totalDocs = await totalProductsQuery.countDocuments().exec();
-  console.log(totalDocs);
 
   // Apply pagination if provided
   if (req.query._page && req.query._per_page) {
