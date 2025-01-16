@@ -1,10 +1,11 @@
-import express from "express";
-import {
-  fetchCartByUser,
+const express = require("express");
+const {
   addToCart,
-  updateCart,
+  fetchCartByUser,
   deleteFromCart,
-} from "../controller/Cart.js";
+  updateCart,
+} = require("../controller/Cart");
+
 const router = express.Router();
 //  /products is already added in base path
 router
@@ -13,4 +14,4 @@ router
   .delete("/:id", deleteFromCart)
   .patch("/:id", updateCart);
 
-export default router;
+exports.router = router;

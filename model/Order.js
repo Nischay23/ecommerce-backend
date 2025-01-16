@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import { Schema } from "mongoose";
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const orderSchema = new Schema({
   items: { type: [Schema.Types.Mixed], required: true },
@@ -24,4 +24,4 @@ orderSchema.set("toJSON", {
   },
 });
 
-export const Order = mongoose.model("Order", orderSchema);
+exports.Order = mongoose.model("Order", orderSchema);

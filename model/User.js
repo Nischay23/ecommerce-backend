@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import { Schema } from "mongoose";
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const userSchema = new Schema({
   email: { type: String, required: true, unique: true },
@@ -23,4 +23,4 @@ userSchema.set("toJSON", {
   },
 });
 
-export const User = mongoose.model("User", userSchema);
+exports.User = mongoose.model("User", userSchema);

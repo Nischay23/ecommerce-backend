@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import { Schema } from "mongoose";
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const cartSchema = new Schema({
   quantity: { type: Number, required: true },
@@ -19,4 +19,4 @@ cartSchema.set("toJSON", {
   },
 });
 
-export const Cart = mongoose.model("Cart", cartSchema);
+exports.Cart = mongoose.model("Cart", cartSchema);

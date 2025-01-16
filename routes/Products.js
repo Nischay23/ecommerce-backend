@@ -1,18 +1,17 @@
-import express from "express";
-import {
+const express = require("express");
+const {
   createProduct,
   fetchAllProducts,
   fetchProductById,
   updateProduct,
-} from "../controller/Product.js";
+} = require("../controller/Product");
 
 const router = express.Router();
-
-// `/products` is already added in the base path
+//  /products is already added in base path
 router
   .post("/", createProduct)
   .get("/", fetchAllProducts)
   .get("/:id", fetchProductById)
   .patch("/:id", updateProduct);
 
-export default router; // Correct ES Module export
+exports.router = router;

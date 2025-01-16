@@ -1,28 +1,20 @@
-import passport from "passport";
+const passport = require("passport");
 
-export function isAuth(req, res, done) {
+exports.isAuth = (req, res, done) => {
   return passport.authenticate("jwt");
-}
+};
 
-export function sanitizeUser(user) {
+exports.sanitizeUser = (user) => {
   return { id: user.id, role: user.role };
-}
-export function cookieExtractor(req) {
+};
+
+exports.cookieExtractor = function (req) {
   let token = null;
-
-  // Check cookies
   if (req && req.cookies) {
-    token = req.cookies.token;
+    token = req.cookies["jwt"];
   }
-
-  // Check Authorization header
-  if (!token && req.headers.authorization) {
-    const authHeader = req.headers.authorization;
-    if (authHeader.startsWith("Bearer ")) {
-      token = authHeader.split(" ")[1];
-    }
-  }
-
-  console.log("Extracted Token:", token); // Debug token extraction
+  //TODO : this is temporary token for testing without cookie
+  token =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ODk2NzI1MjlhM2NiYTA5ZTZhOWQ2YSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzM3MDYyMzQwLCJleHAiOjE3MzcwNjU5NDB9.vbUPdkWvgEDonZ-lr7ygIXBpXjwR1ERblRKfELYr_Ao";
   return token;
-}
+};

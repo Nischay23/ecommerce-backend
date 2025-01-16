@@ -1,6 +1,6 @@
-import { Order } from "../model/Order.js";
+const { Order } = require("../model/Order");
 
-export async function fetchOrdersByUser(req, res) {
+exports.fetchOrdersByUser = async (req, res) => {
   const { id } = req.user;
   try {
     const orders = await Order.find({ user: id });
@@ -9,9 +9,9 @@ export async function fetchOrdersByUser(req, res) {
   } catch (err) {
     res.status(400).json(err);
   }
-}
+};
 
-export async function createOrder(req, res) {
+exports.createOrder = async (req, res) => {
   const order = new Order(req.body);
   try {
     const doc = await order.save();
@@ -19,9 +19,9 @@ export async function createOrder(req, res) {
   } catch (err) {
     res.status(400).json(err);
   }
-}
+};
 
-export async function deleteOrder(req, res) {
+exports.deleteOrder = async (req, res) => {
   const { id } = req.params;
   try {
     const order = await Order.findByIdAndDelete(id);
@@ -29,9 +29,9 @@ export async function deleteOrder(req, res) {
   } catch (err) {
     res.status(400).json(err);
   }
-}
+};
 
-export async function updateOrder(req, res) {
+exports.updateOrder = async (req, res) => {
   const { id } = req.params;
   try {
     const order = await Order.findByIdAndUpdate(id, req.body, {
@@ -41,9 +41,9 @@ export async function updateOrder(req, res) {
   } catch (err) {
     res.status(400).json(err);
   }
-}
+};
 
-export async function fetchAllOrders(req, res) {
+exports.fetchAllOrders = async (req, res) => {
   // sort = {_sort:"price",_order="desc"}
   // pagination = {_page:1,_limit=10}
   let query = Order.find({ deleted: { $ne: true } });
@@ -54,9 +54,10 @@ export async function fetchAllOrders(req, res) {
   }
 
   const totalDocs = await totalOrdersQuery.count().exec();
+  console.log({ totalDocs });
 
-  if (req.query._page && req.query._limit) {
-    const pageSize = req.query._limit;
+  if (req.query._page && req.query._per_page) {
+    const pageSize = req.query._per_page;
     const page = req.query._page;
     query = query.skip(pageSize * (page - 1)).limit(pageSize);
   }
@@ -68,4 +69,4 @@ export async function fetchAllOrders(req, res) {
   } catch (err) {
     res.status(400).json(err);
   }
-}
+};

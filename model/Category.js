@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import { Schema } from "mongoose";
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const categorySchema = new Schema({
   label: { type: String, required: true, unique: true },
@@ -18,4 +18,4 @@ categorySchema.set("toJSON", {
   },
 });
 
-export const Category = mongoose.model("Category", categorySchema);
+exports.Category = mongoose.model("Category", categorySchema);

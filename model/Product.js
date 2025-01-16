@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const productSchema = new Schema({
@@ -40,5 +40,4 @@ productSchema.set("toJSON", {
   },
 });
 
-// Use ES Module export syntax
-export const Product = mongoose.model("Product", productSchema);
+exports.Product = mongoose.model("Product", productSchema);

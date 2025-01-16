@@ -1,64 +1,66 @@
-import express from "express";
+const express = require("express");
 const server = express();
-import mongoose from "mongoose";
-
-import { createProduct } from "./controller/Product.js";
-import productsRouter from "./routes/Products.js";
-import categoriesRouter from "./routes/Categories.js";
-import brandsRouter from "./routes/Brands.js";
-import usersRouter from "./routes/User.js";
-import authRouter from "./routes/Auth.js";
-import cartRouter from "./routes/Cart.js";
-import ordersRouter from "./routes/Order.js";
-import cors from "cors";
-import session from "express-session";
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import crypto from "crypto";
-import jwt from "jsonwebtoken";
-import { Strategy as JwtStrategy } from "passport-jwt";
-import { ExtractJwt as ExtractJwt } from "passport-jwt";
-
-import { User } from "./model/User.js";
-import { isAuth, sanitizeUser, cookieExtractor } from "./services/common.js";
-import cookieParser from "cookie-parser";
+const mongoose = require("mongoose");
+const cors = require("cors");
+const session = require("express-session");
+const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
+const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+const JwtStrategy = require("passport-jwt").Strategy;
+const ExtractJwt = require("passport-jwt").ExtractJwt;
+const cookieParser = require("cookie-parser");
+const { createProduct } = require("./controller/Product");
+const productsRouter = require("./routes/Products");
+const categoriesRouter = require("./routes/Categories");
+const brandsRouter = require("./routes/Brands");
+const usersRouter = require("./routes/User");
+const authRouter = require("./routes/Auth");
+const cartRouter = require("./routes/Cart");
+const ordersRouter = require("./routes/Order");
+const { User } = require("./model/User");
+const { isAuth, sanitizeUser, cookieExtractor } = require("./services/common");
 
 const SECRET_KEY = "SECRET_KEY";
 // JWT options
+
 const opts = {};
 opts.jwtFromRequest = cookieExtractor;
-opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
+opts.secretOrKey = SECRET_KEY;
 
 //middlewares
+server.use(
+  cors({
+    origin: "http://localhost:3000", // Allow requests from frontend
+    credentials: true, // Allow cookies
+  })
+);
 
 server.use(express.static("build"));
 server.use(cookieParser());
-server.use(express.json()); // Middleware to parse JSON requests
-
 server.use(
   session({
     secret: "keyboard cat",
-    resave: false,
-    saveUninitialized: false,
+    resave: false, // don't save session if unmodified
+    saveUninitialized: false, // don't create session until something stored
   })
 );
-server.use(passport.initialize());
-server.use(passport.session()); // Handles persistent login sessions
-
+server.use(passport.authenticate("session"));
 server.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
   })
 );
-
-server.use("/products", isAuth(), productsRouter);
+server.use(express.json()); // to parse req.body
+server.use("/products", isAuth(), productsRouter.router);
 // we can also use JWT token for client-only auth
-server.use("/categories", isAuth(), categoriesRouter);
-server.use("/brands", isAuth(), brandsRouter);
-server.use("/users", isAuth(), usersRouter);
-server.use("/auth", authRouter);
-server.use("/cart", isAuth(), cartRouter);
-server.use("/orders", isAuth(), ordersRouter);
+server.use("/categories", isAuth(), categoriesRouter.router);
+server.use("/brands", isAuth(), brandsRouter.router);
+server.use("/users", isAuth(), usersRouter.router);
+server.use("/auth", authRouter.router);
+server.use("/cart", isAuth(), cartRouter.router);
+server.use("/orders", isAuth(), ordersRouter.router);
+
 // Passport Strategies
 passport.use(
   "local",
@@ -67,10 +69,12 @@ passport.use(
     password,
     done
   ) {
+    // by default passport uses username
     try {
       const user = await User.findOne({ email: email });
+      console.log(email, password, user);
       if (!user) {
-        return done(null, false, { message: "invalid credentials" });
+        return done(null, false, { message: "invalid credentials" }); // for safety
       }
       crypto.pbkdf2(
         password,
@@ -80,13 +84,10 @@ passport.use(
         "sha256",
         async function (err, hashedPassword) {
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
-            return done(null, false, { message: "Invalid credentials" });
+            return done(null, false, { message: "invalid credentials" });
           }
-
-          // Generate token
-          const token = jwt.sign({ user }, SECRET_KEY);
-          console.log("Generated Token:", token); // Debug token generation
-          done(null, { id: user.id, role: user.role });
+          const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
+          done(null, { id: user.id, role: user.role }); // this lines sends to serializer
         }
       );
     } catch (err) {
@@ -98,24 +99,15 @@ passport.use(
 passport.use(
   "jwt",
   new JwtStrategy(opts, async function (jwt_payload, done) {
-    console.log("Decoded JWT Payload in JwtStrategy:", jwt_payload);
-
-    if (!jwt_payload.id) {
-      console.error("JWT Payload missing id");
-      return done(null, false, { message: "Invalid JWT payload" });
-    }
-
+    console.log({ jwt_payload });
     try {
       const user = await User.findById(jwt_payload.id);
       if (user) {
-        console.log("User found:", user);
-        return done(null, user);
+        return done(null, sanitizeUser(user)); // this calls serializer
       } else {
-        console.error("User not found in database");
         return done(null, false);
       }
     } catch (err) {
-      console.error("Error in JwtStrategy:", err);
       return done(err, false);
     }
   })
@@ -129,13 +121,17 @@ passport.serializeUser(function (user, cb) {
   });
 });
 
+// this changes session variable req.user when called from authorized request
+
 passport.deserializeUser(function (user, cb) {
   console.log("de-serialize", user);
   process.nextTick(function () {
     return cb(null, user);
   });
 });
+
 main().catch((err) => console.log(err));
+
 async function main() {
   await mongoose.connect("mongodb://127.0.0.1:27017/ecommerce");
   console.log("database connected");

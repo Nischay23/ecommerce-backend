@@ -1,8 +1,8 @@
-import express from "express";
-import { fetchCategories, createCategory } from "../controller/Category.js";
+const express = require("express");
+const { fetchCategories, createCategory } = require("../controller/Category");
 
 const router = express.Router();
 //  /categories is already added in base path
 router.get("/", fetchCategories).post("/", createCategory);
 
-export default router;
+exports.router = router;

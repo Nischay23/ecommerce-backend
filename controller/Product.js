@@ -1,6 +1,7 @@
-import { Product } from "../model/Product.js";
+const { Product } = require("../model/Product");
 
-export async function createProduct(req, res) {
+exports.createProduct = async (req, res) => {
+  // this product we have to get from API body
   const product = new Product(req.body);
   try {
     const doc = await product.save();
@@ -8,10 +9,13 @@ export async function createProduct(req, res) {
   } catch (err) {
     res.status(400).json(err);
   }
-}
+};
 
-export async function fetchAllProducts(req, res) {
-  // Base query with filtering to exclude deleted products
+exports.fetchAllProducts = async (req, res) => {
+  // filter = {"category":["smartphone","laptops"]}
+  // sort = {_sort:"price",_order="desc"}
+  // pagination = {_page:1,_limit=10}
+  // TODO : we have to try with multiple category and brands after change in front-end
   let condition = {};
   if (!req.query.admin) {
     condition.deleted = { $ne: true };
@@ -20,51 +24,40 @@ export async function fetchAllProducts(req, res) {
   let query = Product.find(condition);
   let totalProductsQuery = Product.find(condition);
 
-  // Apply category filter if provided
   if (req.query.category) {
-    const categories = req.query.category.split(","); // Handling multiple categories (comma-separated)
-    query = query.find({ category: { $in: categories } });
+    query = query.find({ category: req.query.category });
     totalProductsQuery = totalProductsQuery.find({
-      category: { $in: categories },
+      category: req.query.category,
     });
   }
-
-  // Apply brand filter if provided
   if (req.query.brand) {
-    const brands = req.query.brand.split(","); // Handling multiple brands (comma-separated)
-    query = query.find({ brand: { $in: brands } });
-    totalProductsQuery = totalProductsQuery.find({ brand: { $in: brands } });
+    query = query.find({ brand: req.query.brand });
+    totalProductsQuery = totalProductsQuery.find({ brand: req.query.brand });
   }
-
-  // Apply sorting if provided
+  //TODO : How to get sort on discounted Price not on Actual price
   if (req.query._sort && req.query._order) {
     query = query.sort({ [req.query._sort]: req.query._order });
   }
 
-  // Count the total documents for pagination
-  const totalDocs = await totalProductsQuery.countDocuments().exec();
+  const totalDocs = await totalProductsQuery.count().exec();
+  console.log({ totalDocs });
 
-  // Apply pagination if provided
   if (req.query._page && req.query._per_page) {
-    const pageSize = parseInt(req.query._per_page, 10); // Convert to number
-    const page = parseInt(req.query._page, 10); // Convert to number
+    const pageSize = req.query._per_page;
+    const page = req.query._page;
     query = query.skip(pageSize * (page - 1)).limit(pageSize);
   }
 
   try {
-    // Fetch the documents based on query with filters, sorting, and pagination
     const docs = await query.exec();
-
-    // Send response with total count of documents in the X-Total-Count header
     res.set("X-Total-Count", totalDocs);
     res.status(200).json(docs);
   } catch (err) {
-    // Handle errors by sending status 400 and the error message
     res.status(400).json(err);
   }
-}
+};
 
-export const fetchProductById = async (req, res) => {
+exports.fetchProductById = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -75,7 +68,7 @@ export const fetchProductById = async (req, res) => {
   }
 };
 
-export const updateProduct = async (req, res) => {
+exports.updateProduct = async (req, res) => {
   const { id } = req.params;
   try {
     const product = await Product.findByIdAndUpdate(id, req.body, {

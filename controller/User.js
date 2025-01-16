@@ -1,8 +1,9 @@
-import { User } from "../model/User.js";
+const { Category } = require("../model/Category");
+const { User } = require("../model/User");
 
-export async function fetchUserById(req, res) {
+exports.fetchUserById = async (req, res) => {
   const { id } = req.user;
-
+  console.log(id);
   try {
     const user = await User.findById(id);
     res
@@ -16,9 +17,9 @@ export async function fetchUserById(req, res) {
   } catch (err) {
     res.status(400).json(err);
   }
-}
+};
 
-export async function updateUser(req, res) {
+exports.updateUser = async (req, res) => {
   const { id } = req.params;
   try {
     const user = await User.findByIdAndUpdate(id, req.body, { new: true });
@@ -26,4 +27,4 @@ export async function updateUser(req, res) {
   } catch (err) {
     res.status(400).json(err);
   }
-}
+};
